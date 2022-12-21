@@ -9,8 +9,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class MainController {
 
     @GetMapping("/")
-    public String greeting(@RequestParam(name = "name", required = false, defaultValue = "World") String name, Model model) {
-        model.addAttribute("name", name);
+    public String home(Model model) {
+        model.addAttribute("dayAgo", 1);
+        model.addAttribute("weekAgo", 2);
+        model.addAttribute("monthAgo", 3);
+        model.addAttribute("threeMonthsAgo", 4);
         return "home";
     }
 
