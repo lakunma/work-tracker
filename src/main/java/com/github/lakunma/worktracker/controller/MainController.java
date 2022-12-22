@@ -1,12 +1,11 @@
-package com.github.lakunma.worktracker.controllers;
+package com.github.lakunma.worktracker.controller;
 
-import com.github.lakunma.worktracker.models.DayType;
-import com.github.lakunma.worktracker.repo.DayTypeRepository;
+import com.github.lakunma.worktracker.model.DayType;
+import com.github.lakunma.worktracker.repository.DayTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class MainController {
