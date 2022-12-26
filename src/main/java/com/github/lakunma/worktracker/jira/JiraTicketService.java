@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.text.MessageFormat;
+import java.time.LocalDate;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -19,10 +20,16 @@ public class JiraTicketService {
     private final HttpHeaders headers;
 
     private final UserRepository userRepository;
+    private final JiraTicketRepository jiraTicketRepository;
+    private final WorkLogRepository workLogRepository;
 
     @Autowired
-    JiraTicketService(UserRepository userRepository) {
+    JiraTicketService(UserRepository userRepository,
+                      JiraTicketRepository jiraTicketRepository,
+                      WorkLogRepository workLogRepository) {
         this.userRepository = userRepository;
+        this.jiraTicketRepository = jiraTicketRepository;
+        this.workLogRepository = workLogRepository;
         headers = new HttpHeaders();
         headers.add("Cookie", userRepository.findAll().iterator().next().getCookie());
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
@@ -47,4 +54,10 @@ public class JiraTicketService {
         return new LinkedList<>();
     }
 
+    public double workhoursOnDate(LocalDate date) {
+        List<Worklog> workLogsForDate = workLogRepository.findAllByStarted(date);
+        return workLogsForDate.stream()
+                .map(worklog -> (double) worklog.timeSpentInSeconds / 3600)
+                .reduce(0d, Double::sum);
+    }
 }

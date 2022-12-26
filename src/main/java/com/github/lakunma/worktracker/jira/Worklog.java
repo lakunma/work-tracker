@@ -5,15 +5,17 @@ import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @Entity
 @Getter
 @Setter
-public class JiraTicket {
+public class Worklog {
     @Id
     Long id;
-    String jiraKey;
-    Date updatedInJira;
-    Date lastFetchedFromJira;
+
+    LocalDate started;
+    int timeSpentInSeconds;
+    String authorEmail;
+    String description;
 }

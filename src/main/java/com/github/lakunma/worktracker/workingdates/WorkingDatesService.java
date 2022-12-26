@@ -11,8 +11,8 @@ import java.util.*;
 public class WorkingDatesService {
 
     private final DayTypeRepository dayTypeRepository;
-    private final Set<LocalDate> workingOnWeekendDays = new HashSet<LocalDate>();
-    private final Set<LocalDate> holidayDays = new HashSet<LocalDate>();
+    private final Set<LocalDate> workingOnWeekendDays = new HashSet<>();
+    private final Set<LocalDate> holidayDays = new HashSet<>();
 
     @Autowired
     public WorkingDatesService(DayTypeRepository dayTypeRepository) {
@@ -56,5 +56,17 @@ public class WorkingDatesService {
 
     public LocalDate workingDayBefore(int nDays) {
         return workingDaysTillNow(nDays).get(0);
+    }
+
+    public int workingDayFromNow(LocalDate date) {
+        LocalDate curDay = LocalDate.now();
+        int workingDays = 0;
+        while (!curDay.isBefore(date)) {
+            if (isWorking(curDay)) {
+                workingDays++;
+            }
+            curDay = curDay.minusDays(1);
+        }
+        return workingDays;
     }
 }

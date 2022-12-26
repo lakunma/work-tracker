@@ -1,4 +1,4 @@
-package com.github.lakunma.worktracker.workingdates;
+package com.github.lakunma.worktracker.scores;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -19,7 +20,7 @@ public class NormOnDate {
     private Long id;
 
     @NotNull
-    private Date date;
+    private LocalDate date;
 
     private double norm;
 

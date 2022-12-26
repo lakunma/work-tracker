@@ -10,8 +10,24 @@
 <body>
 <header th:insert="~{shared/nav :: nav}"></header>
 
-<div>Start Date: <span th:text="${startDate}"/></div>
+<div>Start Date: <span th:text="${workingDays.get(0)}"/></div>
 <div>Total Norm: <span th:text="${totalNorm}"/></div>
+
+<table style="border-width: thick 1px">
+    <thead>
+    <tr style="border-width: 1px; border-style: solid">
+        <th th:each="date : ${workingDays}"
+            style="height: 100px; writing-mode: vertical-lr; border-style: solid;border-width: 1px;">
+            <div style="white-space: nowrap">
+                <span th:text="${date}"> </span>
+            </div>
+        </th>
+    </tr>
+    </thead>
+    <tbody>
+
+    </tbody>
+</table>
 
 </body>
 </html>
