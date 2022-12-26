@@ -1,4 +1,4 @@
-package com.github.lakunma.worktracker.model;
+package com.github.lakunma.worktracker.workingdates;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,7 +7,7 @@ import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 @Entity
 @Getter
@@ -17,6 +17,6 @@ public class DayType {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    private Date date;
+    private LocalDate date;
     private boolean workDayOnHoliday = false;
 }

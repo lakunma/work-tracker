@@ -1,7 +1,7 @@
 package com.github.lakunma.worktracker.controller;
 
-import com.github.lakunma.worktracker.model.DayType;
-import com.github.lakunma.worktracker.repository.DayTypeRepository;
+import com.github.lakunma.worktracker.workingdates.DayType;
+import com.github.lakunma.worktracker.workingdates.DayTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
