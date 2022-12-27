@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class JiraTicketDto {
-    int id;
+    long id;
     String key;
     JiraTicketFieldsDto fields;
 }

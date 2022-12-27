@@ -27,7 +27,7 @@ public class WorkingDatesService {
         }
     }
 
-    private boolean isWorking(LocalDate date) {
+    public boolean isWorking(LocalDate date) {
         if (holidayDays.contains(date)) {
             return false;
         }
@@ -59,14 +59,12 @@ public class WorkingDatesService {
     }
 
     public int workingDayFromNow(LocalDate date) {
-        LocalDate curDay = LocalDate.now();
         int workingDays = 0;
-        while (!curDay.isBefore(date)) {
+        for (LocalDate curDay = LocalDate.now(); !curDay.isBefore(date); curDay = curDay.minusDays(1)) {
             if (isWorking(curDay)) {
                 workingDays++;
             }
-            curDay = curDay.minusDays(1);
         }
-        return workingDays;
+        return workingDays - 1;
     }
 }
