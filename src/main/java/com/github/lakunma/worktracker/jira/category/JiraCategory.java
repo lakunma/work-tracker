@@ -37,4 +37,8 @@ public class JiraCategory {
                 .filter(w -> !w.isBlank())
                 .toList();
     }
+
+    public boolean isPrimary() {
+        return maxScoringThreshold != null;
+    }
 }

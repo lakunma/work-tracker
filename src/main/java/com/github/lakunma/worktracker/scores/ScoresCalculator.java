@@ -8,6 +8,7 @@ import com.github.lakunma.worktracker.workingdates.WorkingDatesService;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -141,6 +142,64 @@ public class ScoresCalculator {
                 .reduce(0d, Double::sum);
     }
 
+    public double getFactorForCategory(String categoryName) {
+        double normRatioFactor = getNormRatioFactor();
+        JiraCategory category = jiraCategoryService.getCategory(categoryName);
+        if (category.isPrimary()) {
+            normRatioFactor = 1d;
+        }
+
+        return normRatioFactor * category.getFactor();
+    }
+
+    public Map<String, Double> getTotalFactoredWeightedCompletedPerCategory() {
+        record CatToScore(String categoryName, double score) {
+        }
+
+        return getCategories().stream()
+                .map(JiraCategory::getName)
+                .map(categoryName -> {
+                    double score = getDays().stream()
+                            .map(date -> getCompletedOnDate(date, categoryName) * getWeightOnDate(date))
+                            .map(completedWeightedHours -> completedWeightedHours * getFactorForCategory(categoryName))
+                            .reduce(0d, Double::sum);
+                    return new CatToScore(categoryName, score);
+                })
+                .collect(Collectors.toMap(CatToScore::categoryName, CatToScore::score));
+    }
+
+
+    public double getTotalFactoredWeightedCompleted() {
+        return getTotalFactoredWeightedCompletedPerCategory().values().stream()
+                .reduce(0d, Double::sum);
+    }
+
+    public double getRemainingScores() {
+        return getTotalNorm() - getTotalFactoredWeightedCompleted();
+    }
+
+    public double getOneHourScoreForCategory(String categoryName) {
+        JiraCategory category = jiraCategoryService.getCategory(categoryName);
+        double dateWeight = getWeightOnDate(LocalDate.now());
+        double factor = getFactorForCategory(categoryName);
+        double directScore = dateWeight * factor;
+        if (!category.isPrimary()) {
+            return directScore;
+        }
+
+        Map<String, Double> totalFactoredWeightedCompletedPerCategory = getTotalFactoredWeightedCompletedPerCategory();
+        Double nonPrimaryFactoredScore = getTotalFactoredWeightedCompletedPerCategory().entrySet().stream()
+                .filter(kv -> !jiraCategoryService.getCategory(kv.getKey()).isPrimary())
+                .map(Map.Entry::getValue)
+                .reduce(0d, Double::sum);
+
+        double oneHourRatio = 1/getTotalCompleted(categoryName);
+        double indirectScore = nonPrimaryFactoredScore * oneHourRatio;
+
+        return directScore + indirectScore;
+
+    }
+
     public List<JiraCategory> getCategories() {
         return jiraCategoryService.getCategories();
     }
@@ -161,7 +220,7 @@ public class ScoresCalculator {
         return ratio * category.getMaxScoringThresholdQuotient();
     }
 
-    public double getTotalPenalty() {
+    public double getNormRatioFactor() {
         List<Double> qPerCategory = getScoringCategories().stream()
                 .map(c -> getPenaltyPerCategory(c.getName())).toList();
         return qPerCategory.stream()

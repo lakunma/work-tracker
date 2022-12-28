@@ -1,6 +1,7 @@
 package com.github.lakunma.worktracker.jira.ticket;
 
-import com.github.lakunma.worktracker.jira.*;
+import com.github.lakunma.worktracker.jira.JiraConverter;
+import com.github.lakunma.worktracker.jira.JiraRestClient;
 import com.github.lakunma.worktracker.jira.worklog.WorkLogRepository;
 import com.github.lakunma.worktracker.jira.worklog.Worklog;
 import com.github.lakunma.worktracker.jira.worklog.WorklogDto;
@@ -10,10 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -24,6 +22,7 @@ public class JiraTicketService {
     private final WorkLogRepository workLogRepository;
 
     private final JiraRestClient jiraRestClient;
+    private final Map<LocalDate, List<Worklog>> dateToWorklog = new HashMap<>();
 
     @Autowired
     JiraTicketService(UserRepository userRepository, JiraTicketRepository jiraTicketRepository, WorkLogRepository workLogRepository) {
@@ -74,14 +73,17 @@ public class JiraTicketService {
         List<WorklogDto> worklogDtos = jiraRestClient.requestWorklogsAfter(jiraKey, startDate);
         return worklogDtos.stream().map(dto -> JiraConverter.toWorklog(dto, jiraKey)).toList();
     }
-    private List<Worklog> getWorklogsForDate(LocalDate date){
-        Date startOfDay = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
-        Date endOfDay = Date.from(date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
 
-        return workLogRepository.findAllByStartedBetween(startOfDay, endOfDay);
+    private List<Worklog> getWorklogsForDate(LocalDate date) {
+        return dateToWorklog.computeIfAbsent(date, newDate -> {
+            Date startOfDay = Date.from(newDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            Date endOfDay = Date.from(newDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+            return workLogRepository.findAllByStartedBetween(startOfDay, endOfDay);
+        });
     }
 
-    private double worklogsToWorkHours(List<Worklog> worklogs){
+    private double worklogsToWorkHours(List<Worklog> worklogs) {
         return worklogs.stream()
                 .map(worklog -> (double) worklog.getTimeSpentInSeconds() / 3600)
                 .reduce(0d, Double::sum);
