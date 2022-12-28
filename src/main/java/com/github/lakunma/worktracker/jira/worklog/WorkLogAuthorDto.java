@@ -1,4 +1,4 @@
-package com.github.lakunma.worktracker.jira;
+package com.github.lakunma.worktracker.jira.worklog;
 
 import lombok.Data;
 

@@ -1,5 +1,9 @@
-package com.github.lakunma.worktracker.jira;
+package com.github.lakunma.worktracker.jira.ticket;
 
+import com.github.lakunma.worktracker.jira.*;
+import com.github.lakunma.worktracker.jira.worklog.WorkLogRepository;
+import com.github.lakunma.worktracker.jira.worklog.Worklog;
+import com.github.lakunma.worktracker.jira.worklog.WorklogDto;
 import com.github.lakunma.worktracker.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,7 +45,7 @@ public class JiraTicketService {
         Date startOfDay = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
         Date endOfDay = Date.from(date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
         List<Worklog> workLogsForDate = workLogRepository.findAllByStartedBetween(startOfDay, endOfDay);
-        return workLogsForDate.stream().map(worklog -> (double) worklog.timeSpentInSeconds / 3600).reduce(0d, Double::sum);
+        return workLogsForDate.stream().map(worklog -> (double) worklog.getTimeSpentInSeconds() / 3600).reduce(0d, Double::sum);
     }
 
     private List<JiraTicket> calcUpdatedJiraTickets(LocalDate startDate) {

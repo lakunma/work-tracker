@@ -42,6 +42,7 @@
                 <span th:text="${#numbers.formatDecimal(scoresCalculator.getCompletedOnDate(date),1,1)}"> </span>
             </div>
         </td>
+        <td th:text="${#numbers.formatDecimal(scoresCalculator.getTotalCompleted(),1,1)}"></td>
     </tr>
     <tr style="border-width: 1px; border-style: solid">
         <td>Weight</td>
@@ -52,6 +53,19 @@
         </td>
         <td th:text="${#numbers.formatDecimal(scoresCalculator.getAvgWorkingWeight(),1,1)}"></td>
     </tr>
+    <tr style="border-width: 1px; border-style: solid">
+        <td>Weighted Actual</td>
+        <td th:each="date : ${scoresCalculator.getDays()}" style="border-style: solid;border-width: 1px;">
+            <div style="white-space: nowrap">
+                <span th:text="${#numbers.formatDecimal(scoresCalculator.getWeightedCompletedOnDate(date),1,1)}"> </span>
+            </div>
+        </td>
+        <td th:text="${#numbers.formatDecimal(scoresCalculator.getTotalWeightedCompleted(),1,1)}"></td>
+    </tr>
+    <tr th:each="category: ${scoresCalculator.getCategories()}" style="border-width: 1px; border-style: solid">
+        <td></td>
+    </tr>
+
 
     </tbody>
 </table>

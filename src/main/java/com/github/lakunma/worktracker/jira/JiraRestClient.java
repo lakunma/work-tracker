@@ -1,5 +1,9 @@
 package com.github.lakunma.worktracker.jira;
 
+import com.github.lakunma.worktracker.jira.ticket.JiraTicketDto;
+import com.github.lakunma.worktracker.jira.ticket.JiraTicketsSearchResultDto;
+import com.github.lakunma.worktracker.jira.worklog.WorklogDto;
+import com.github.lakunma.worktracker.jira.worklog.WorklogResponseDto;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -64,6 +68,6 @@ public class JiraRestClient {
         if (responseDto == null) {
             return emptyList();
         }
-        return responseDto.worklogs;
+        return responseDto.getWorklogs();
     }
 }

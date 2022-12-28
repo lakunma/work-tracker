@@ -1,6 +1,6 @@
 package com.github.lakunma.worktracker.scores;
 
-import com.github.lakunma.worktracker.jira.JiraTicketService;
+import com.github.lakunma.worktracker.jira.ticket.JiraTicketService;
 import com.github.lakunma.worktracker.workingdates.WorkingDatesService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;

@@ -1,8 +1,7 @@
-package com.github.lakunma.worktracker.jira;
+package com.github.lakunma.worktracker.jira.worklog;
 
 import org.springframework.data.repository.CrudRepository;
 
-import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 

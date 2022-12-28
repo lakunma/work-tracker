@@ -1,6 +1,6 @@
 package com.github.lakunma.worktracker.scores;
 
-import com.github.lakunma.worktracker.jira.JiraTicketService;
+import com.github.lakunma.worktracker.jira.ticket.JiraTicketService;
 import com.github.lakunma.worktracker.workingdates.WorkingDatesService;
 
 import java.time.LocalDate;
@@ -102,9 +102,21 @@ public class ScoresCalculator {
         return jiraTicketService.workhoursOnDate(date);
     }
 
+    public double getTotalCompleted() {
+        return getDays().stream()
+                .map(this::getCompletedOnDate)
+                .reduce(0d, Double::sum);
+    }
+
     public double getWeightedCompletedOnDate(LocalDate date) {
         double workhours = jiraTicketService.workhoursOnDate(date);
         double dateWeight = getWeightOnDate(date);
         return workhours * dateWeight;
+    }
+
+    public double getTotalWeightedCompleted(){
+        return getDays().stream()
+                .map(this::getWeightedCompletedOnDate)
+                .reduce(0d, Double::sum);
     }
 }

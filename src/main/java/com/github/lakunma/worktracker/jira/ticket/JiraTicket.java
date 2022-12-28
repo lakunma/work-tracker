@@ -1,4 +1,4 @@
-package com.github.lakunma.worktracker.jira;
+package com.github.lakunma.worktracker.jira.ticket;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
