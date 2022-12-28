@@ -1,5 +1,7 @@
 package com.github.lakunma.worktracker.scores;
 
+import com.github.lakunma.worktracker.jira.category.JiraCategory;
+import com.github.lakunma.worktracker.jira.category.JiraCategoryService;
 import com.github.lakunma.worktracker.jira.ticket.JiraTicketService;
 import com.github.lakunma.worktracker.workingdates.WorkingDatesService;
 
@@ -16,6 +18,7 @@ public class ScoresCalculator {
 
     private final WorkingDatesService workingDatesService;
     private final NormOnDateRepository normOnDateRepository;
+    private final JiraCategoryService jiraCategoryService;
     private final JiraTicketService jiraTicketService;
 
     private final TreeSet<LocalDate> workingDays;
@@ -25,10 +28,12 @@ public class ScoresCalculator {
     public ScoresCalculator(int workingDaysWindow,
                             WorkingDatesService workingDatesService,
                             NormOnDateRepository normOnDateRepository,
+                            JiraCategoryService jiraCategoryService,
                             JiraTicketService jiraTicketService) {
 
         this.normOnDateRepository = normOnDateRepository;
         this.workingDaysWindow = workingDaysWindow;
+        this.jiraCategoryService = jiraCategoryService;
         this.jiraTicketService = jiraTicketService;
         this.now = LocalDate.now();
         this.workingDatesService = workingDatesService;
@@ -61,7 +66,7 @@ public class ScoresCalculator {
         }
 
         if (firstLater.isEmpty() || lastBefore.isEmpty()) {
-            return firstLater.orElseGet(() -> lastBefore.get()).getNorm();
+            return firstLater.orElseGet(lastBefore::get).getNorm();
         }
 
         //both exists -> do linear interpolation
@@ -71,10 +76,8 @@ public class ScoresCalculator {
         long dt = ChronoUnit.DAYS.between(before, date);
 
         double q = (double) dt / period;
-        double norm = (1 - q) * lastBefore.get().getNorm() + q * firstLater.get().getNorm();
 
-
-        return norm;
+        return (1 - q) * lastBefore.get().getNorm() + q * firstLater.get().getNorm();
     }
 
     public double getTotalNorm() {
@@ -102,11 +105,29 @@ public class ScoresCalculator {
         return jiraTicketService.workhoursOnDate(date);
     }
 
+    public double getCompletedOnDate(LocalDate date, String categoryName) {
+        Set<String> jiraKeys = jiraCategoryService.jiraKeysForCategory(categoryName);
+        boolean excludeTickets = false;
+        if (jiraKeys.isEmpty()) {
+            excludeTickets = true;
+            jiraKeys = jiraCategoryService.jiraKeysNotForCategory(categoryName);
+        }
+        return jiraTicketService.workhoursOnDate(date, jiraKeys, excludeTickets);
+    }
+
+
     public double getTotalCompleted() {
         return getDays().stream()
                 .map(this::getCompletedOnDate)
                 .reduce(0d, Double::sum);
     }
+
+    public double getTotalCompleted(String categoryName) {
+        return getDays().stream()
+                .map(date -> getCompletedOnDate(date, categoryName))
+                .reduce(0d, Double::sum);
+    }
+
 
     public double getWeightedCompletedOnDate(LocalDate date) {
         double workhours = jiraTicketService.workhoursOnDate(date);
@@ -114,9 +135,36 @@ public class ScoresCalculator {
         return workhours * dateWeight;
     }
 
-    public double getTotalWeightedCompleted(){
+    public double getTotalWeightedCompleted() {
         return getDays().stream()
                 .map(this::getWeightedCompletedOnDate)
                 .reduce(0d, Double::sum);
+    }
+
+    public List<JiraCategory> getCategories() {
+        return jiraCategoryService.getCategories();
+    }
+
+    public List<JiraCategory> getScoringCategories() {
+        return jiraCategoryService.getCategories().stream()
+                .filter(c -> c.getMaxScoringThreshold() != null)
+                .toList();
+    }
+
+    public double getAvgCompleted(String categoryName) {
+        return getTotalCompleted(categoryName) / workingDaysWindow;
+    }
+
+    public double getPenaltyPerCategory(String categoryName) {
+        JiraCategory category = jiraCategoryService.getCategory(categoryName);
+        double ratio = getAvgCompleted(categoryName) / category.getMaxScoringThreshold();
+        return ratio * category.getMaxScoringThresholdQuotient();
+    }
+
+    public double getTotalPenalty() {
+        List<Double> qPerCategory = getScoringCategories().stream()
+                .map(c -> getPenaltyPerCategory(c.getName())).toList();
+        return qPerCategory.stream()
+                .reduce(1d, (a, b) -> a * b);
     }
 }

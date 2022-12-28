@@ -13,6 +13,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -42,18 +43,16 @@ public class JiraTicketService {
     }
 
     public double workhoursOnDate(LocalDate date) {
-        Date startOfDay = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
-        Date endOfDay = Date.from(date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
-        List<Worklog> workLogsForDate = workLogRepository.findAllByStartedBetween(startOfDay, endOfDay);
-        return workLogsForDate.stream().map(worklog -> (double) worklog.getTimeSpentInSeconds() / 3600).reduce(0d, Double::sum);
+        List<Worklog> worklogsForDate = getWorklogsForDate(date);
+        return worklogsToWorkHours(worklogsForDate);
     }
 
     private List<JiraTicket> calcUpdatedJiraTickets(LocalDate startDate) {
         Map<String, JiraTicket> oldJiraTickets = StreamSupport.stream(jiraTicketRepository.findAll().spliterator(), false).collect(Collectors.toMap(JiraTicket::getJiraKey, Function.identity()));
         List<JiraTicket> freshJiraTickets = fetchTicketsFromJira(startDate);
         return freshJiraTickets.stream().filter(freshTicket -> {
-            var oldJiraTicket = oldJiraTickets.get(freshTicket.jiraKey);
-            return oldJiraTicket == null || oldJiraTicket.getUpdatedInJira().before(freshTicket.updatedInJira);
+            var oldJiraTicket = oldJiraTickets.get(freshTicket.getJiraKey());
+            return oldJiraTicket == null || oldJiraTicket.getUpdatedInJira().before(freshTicket.getUpdatedInJira());
         }).toList();
     }
 
@@ -74,5 +73,28 @@ public class JiraTicketService {
     private List<Worklog> requestWorklogsAfter(String jiraKey, LocalDate startDate) {
         List<WorklogDto> worklogDtos = jiraRestClient.requestWorklogsAfter(jiraKey, startDate);
         return worklogDtos.stream().map(dto -> JiraConverter.toWorklog(dto, jiraKey)).toList();
+    }
+    private List<Worklog> getWorklogsForDate(LocalDate date){
+        Date startOfDay = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        Date endOfDay = Date.from(date.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+        return workLogRepository.findAllByStartedBetween(startOfDay, endOfDay);
+    }
+
+    private double worklogsToWorkHours(List<Worklog> worklogs){
+        return worklogs.stream()
+                .map(worklog -> (double) worklog.getTimeSpentInSeconds() / 3600)
+                .reduce(0d, Double::sum);
+    }
+
+    public double workhoursOnDate(LocalDate date, Set<String> jiraKeys, boolean excludeTickets) {
+        List<Worklog> worklogsForDate = getWorklogsForDate(date);
+        List<Worklog> filteredWorklogs = worklogsForDate.stream()
+                .filter(worklog -> jiraKeys.contains(worklog.getJiraKey()) ^ excludeTickets)
+                .toList();
+
+
+        return worklogsToWorkHours(filteredWorklogs);
+
     }
 }

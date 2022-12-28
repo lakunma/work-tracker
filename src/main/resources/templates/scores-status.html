@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
 <head>
     <title>WorkTracker/Scores</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
@@ -63,10 +63,38 @@
         <td th:text="${#numbers.formatDecimal(scoresCalculator.getTotalWeightedCompleted(),1,1)}"></td>
     </tr>
     <tr th:each="category: ${scoresCalculator.getCategories()}" style="border-width: 1px; border-style: solid">
-        <td></td>
+        <td th:text="${category.getName()}"></td>
+        <td th:each="date : ${scoresCalculator.getDays()}" style="border-style: solid;border-width: 1px;">
+            <div style="white-space: nowrap">
+                <span th:text="${#numbers.formatDecimal(scoresCalculator.getCompletedOnDate(date, category.getName()),1,1)}"> </span>
+            </div>
+        </td>
+        <td th:text="${#numbers.formatDecimal(scoresCalculator.getTotalCompleted(category.getName()),1,1)}"></td>
     </tr>
 
 
+    </tbody>
+</table>
+<h2>Penalties</h2>
+<table style="border-width: thick 1px">
+    <thead>
+    <tr style="border-width: 1px; border-style: solid">
+        <th/>
+        <th> AvgPerDay</th>
+        <th>Q</th>
+    </tr>
+    <tbody>
+    <tr th:each="category: ${scoresCalculator.getScoringCategories()}" style="border-width: 1px; border-style: solid">
+        <td th:text="${category.getName()}" style="border-style: solid;border-width: 1px;"></td>
+        <td th:text="${#numbers.formatDecimal(scoresCalculator.getAvgCompleted(category.getName()),1,2)}"></td>
+        <td th:text="${#numbers.formatDecimal(scoresCalculator.getPenaltyPerCategory(category.getName()),1,2)}"
+            style="border-style: solid;border-width: 1px;"></td>
+    </tr>
+    <tr style="border-width: 1px; border-style: solid">
+        <td>Total</td>
+        <td></td>
+        <td th:text="${#numbers.formatDecimal(scoresCalculator.getTotalPenalty(),1,2)}"></td>
+    </tr>
     </tbody>
 </table>
 
