@@ -28,12 +28,12 @@ public class JiraCategoryService {
         return nameToCategory.values().stream().toList();
     }
 
-    public Set<String> jiraKeysForCategory(String categoryName) {
+    private Set<String> jiraKeysForCategory(String categoryName) {
         JiraCategory jiraCategory = nameToCategory.get(categoryName);
         return new HashSet<>(jiraCategory.jiraTicketKeys());
     }
 
-    public Set<String> jiraKeysNotForCategory(String categoryName) {
+    private Set<String> jiraKeysNotForCategory(String categoryName) {
         return nameToCategory.entrySet().stream()
                 .filter(kv -> !kv.getKey().equals(categoryName))
                 .flatMap(kv -> kv.getValue().jiraTicketKeys().stream())
@@ -42,5 +42,17 @@ public class JiraCategoryService {
 
     public JiraCategory getCategory(String categoryName) {
         return nameToCategory.get(categoryName);
+    }
+
+    public boolean isJiraKeyInsideCategory(String jiraKey, String categoryName) {
+        Set<String> jiraKeys = jiraKeysForCategory(categoryName);
+        boolean excludeTickets = false;
+        if (jiraKeys.isEmpty()) {
+            excludeTickets = true;
+            jiraKeys = jiraKeysNotForCategory(categoryName);
+        }
+
+        return jiraKeys.contains(jiraKey) ^ excludeTickets;
+
     }
 }

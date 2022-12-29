@@ -23,4 +23,8 @@ public class Worklog {
     String authorEmail;
     @Column(length = 10000)
     String description;
+
+    public double getTimeSpentInHours() {
+        return timeSpentInSeconds / 3600d;
+    }
 }

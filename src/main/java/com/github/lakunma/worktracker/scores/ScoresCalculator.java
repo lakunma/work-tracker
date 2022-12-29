@@ -8,6 +8,7 @@ import com.github.lakunma.worktracker.workingdates.WorkingDatesService;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -16,9 +17,7 @@ import java.util.stream.StreamSupport;
 public class ScoresCalculator {
     private final int workingDaysWindow;
     private final LocalDate now;
-
     private final WorkingDatesService workingDatesService;
-    private final NormOnDateRepository normOnDateRepository;
     private final JiraCategoryService jiraCategoryService;
     private final JiraTicketService jiraTicketService;
 
@@ -26,13 +25,8 @@ public class ScoresCalculator {
 
     private final List<NormOnDate> norms;
 
-    public ScoresCalculator(int workingDaysWindow,
-                            WorkingDatesService workingDatesService,
-                            NormOnDateRepository normOnDateRepository,
-                            JiraCategoryService jiraCategoryService,
-                            JiraTicketService jiraTicketService) {
+    public ScoresCalculator(int workingDaysWindow, WorkingDatesService workingDatesService, NormOnDateRepository normOnDateRepository, JiraCategoryService jiraCategoryService, JiraTicketService jiraTicketService) {
 
-        this.normOnDateRepository = normOnDateRepository;
         this.workingDaysWindow = workingDaysWindow;
         this.jiraCategoryService = jiraCategoryService;
         this.jiraTicketService = jiraTicketService;
@@ -40,15 +34,16 @@ public class ScoresCalculator {
         this.workingDatesService = workingDatesService;
 
         workingDays = new TreeSet<>(workingDatesService.workingDaysTillNow(workingDaysWindow));
-        norms = StreamSupport.stream(normOnDateRepository.findAll().spliterator(), false)
-                .sorted(Comparator.comparing(NormOnDate::getDate))
-                .toList();
+        norms = StreamSupport.stream(normOnDateRepository.findAll()
+                                                         .spliterator(), false)
+                             .sorted(Comparator.comparing(NormOnDate::getDate))
+                             .toList();
     }
 
     public List<LocalDate> getDays() {
         LocalDate firstDate = workingDays.first();
         return Stream.iterate(firstDate, curDate -> !curDate.isAfter(now), d -> d.plusDays(1))
-                .toList();
+                     .toList();
     }
 
     public double getNormOnDate(LocalDate date) {
@@ -56,43 +51,51 @@ public class ScoresCalculator {
             return 0;
         }
         Optional<NormOnDate> firstLater = norms.stream()
-                .filter(nd -> nd.getDate().isAfter(date))
-                .findFirst();
+                                               .filter(nd -> nd.getDate()
+                                                               .isAfter(date))
+                                               .findFirst();
         List<NormOnDate> reversedNorms = new ArrayList<>(norms);
         Collections.reverse(reversedNorms);
 
         Optional<NormOnDate> lastBefore = reversedNorms.stream()
-                .filter(nd -> nd.getDate().isBefore(date)).findFirst();
+                                                       .filter(nd -> nd.getDate()
+                                                                       .isBefore(date))
+                                                       .findFirst();
 
         if (firstLater.isEmpty() && lastBefore.isEmpty()) {
             return 0;
         }
 
         if (firstLater.isEmpty() || lastBefore.isEmpty()) {
-            return firstLater.orElseGet(lastBefore::get).getNorm();
+            return firstLater.orElseGet(lastBefore::get)
+                             .getNorm();
         }
 
         //both exists -> do linear interpolation
-        LocalDate before = lastBefore.get().getDate();
-        LocalDate after = firstLater.get().getDate();
+        LocalDate before = lastBefore.get()
+                                     .getDate();
+        LocalDate after = firstLater.get()
+                                    .getDate();
         long period = ChronoUnit.DAYS.between(before, after);
         long dt = ChronoUnit.DAYS.between(before, date);
 
         double q = (double) dt / period;
 
-        return (1 - q) * lastBefore.get().getNorm() + q * firstLater.get().getNorm();
+        return (1 - q) * lastBefore.get()
+                                   .getNorm() + q * firstLater.get()
+                                                              .getNorm();
     }
 
     public double getTotalNorm() {
         return getDays().stream()
-                .map(this::getNormOnDate)
-                .reduce(0d, Double::sum);
+                        .map(this::getNormOnDate)
+                        .reduce(0d, Double::sum);
     }
 
     public double getAvgWorkingWeight() {
         return workingDays.stream()
-                .map(this::getWeightOnDate)
-                .reduce(0d, Double::sum) / workingDays.size();
+                          .map(this::getWeightOnDate)
+                          .reduce(0d, Double::sum) / workingDays.size();
     }
 
 
@@ -109,26 +112,20 @@ public class ScoresCalculator {
     }
 
     public double getCompletedOnDate(LocalDate date, String categoryName) {
-        Set<String> jiraKeys = jiraCategoryService.jiraKeysForCategory(categoryName);
-        boolean excludeTickets = false;
-        if (jiraKeys.isEmpty()) {
-            excludeTickets = true;
-            jiraKeys = jiraCategoryService.jiraKeysNotForCategory(categoryName);
-        }
-        return jiraTicketService.workhoursOnDate(date, jiraKeys, excludeTickets);
+        Predicate<String> isJiraKeyGood = (String jiraKey) -> jiraCategoryService.isJiraKeyInsideCategory(jiraKey, categoryName);
+        return jiraTicketService.workhoursOnDate(date, isJiraKeyGood);
     }
-
 
     public double getTotalCompleted() {
         return getDays().stream()
-                .map(this::getCompletedOnDate)
-                .reduce(0d, Double::sum);
+                        .map(this::getCompletedOnDate)
+                        .reduce(0d, Double::sum);
     }
 
     public double getTotalCompleted(String categoryName) {
         return getDays().stream()
-                .map(date -> getCompletedOnDate(date, categoryName))
-                .reduce(0d, Double::sum);
+                        .map(date -> getCompletedOnDate(date, categoryName))
+                        .reduce(0d, Double::sum);
     }
 
 
@@ -140,8 +137,8 @@ public class ScoresCalculator {
 
     public double getTotalWeightedCompleted() {
         return getDays().stream()
-                .map(this::getWeightedCompletedOnDate)
-                .reduce(0d, Double::sum);
+                        .map(this::getWeightedCompletedOnDate)
+                        .reduce(0d, Double::sum);
     }
 
     public double getFactorForCategory(String categoryName) {
@@ -159,21 +156,22 @@ public class ScoresCalculator {
         }
 
         return getCategories().stream()
-                .map(JiraCategory::getName)
-                .map(categoryName -> {
-                    double score = getDays().stream()
-                            .map(date -> getCompletedOnDate(date, categoryName) * getWeightOnDate(date))
-                            .map(completedWeightedHours -> completedWeightedHours * getFactorForCategory(categoryName))
-                            .reduce(0d, Double::sum);
-                    return new CatToScore(categoryName, score);
-                })
-                .collect(Collectors.toMap(CatToScore::categoryName, CatToScore::score));
+                              .map(JiraCategory::getName)
+                              .map(categoryName -> {
+                                  double score = getDays().stream()
+                                                          .map(date -> getCompletedOnDate(date, categoryName) * getWeightOnDate(date))
+                                                          .map(completedWeightedHours -> completedWeightedHours * getFactorForCategory(categoryName))
+                                                          .reduce(0d, Double::sum);
+                                  return new CatToScore(categoryName, score);
+                              })
+                              .collect(Collectors.toMap(CatToScore::categoryName, CatToScore::score));
     }
 
 
     public double getTotalFactoredWeightedCompleted() {
-        return getTotalFactoredWeightedCompletedPerCategory().values().stream()
-                .reduce(0d, Double::sum);
+        return getTotalFactoredWeightedCompletedPerCategory().values()
+                                                             .stream()
+                                                             .reduce(0d, Double::sum);
     }
 
     public double getRemainingNormalizedWorkHours() {
@@ -190,10 +188,12 @@ public class ScoresCalculator {
             return directScore / dateWeight;
         }
 
-        Double nonPrimaryFactoredScore = getTotalFactoredWeightedCompletedPerCategory().entrySet().stream()
-                .filter(kv -> !jiraCategoryService.getCategory(kv.getKey()).isPrimary())
-                .map(Map.Entry::getValue)
-                .reduce(0d, Double::sum);
+        Double nonPrimaryFactoredScore = getTotalFactoredWeightedCompletedPerCategory().entrySet()
+                                                                                       .stream()
+                                                                                       .filter(kv -> !jiraCategoryService.getCategory(kv.getKey())
+                                                                                                                         .isPrimary())
+                                                                                       .map(Map.Entry::getValue)
+                                                                                       .reduce(0d, Double::sum);
 
         double oneHourRatio = 1 / getTotalCompleted(categoryName);
         double indirectScore = nonPrimaryFactoredScore * oneHourRatio;
@@ -207,9 +207,10 @@ public class ScoresCalculator {
     }
 
     public List<JiraCategory> getScoringCategories() {
-        return jiraCategoryService.getCategories().stream()
-                .filter(c -> c.getMaxScoringThreshold() != null)
-                .toList();
+        return jiraCategoryService.getCategories()
+                                  .stream()
+                                  .filter(c -> c.getMaxScoringThreshold() != null)
+                                  .toList();
     }
 
     public double getAvgCompleted(String categoryName) {
@@ -224,8 +225,9 @@ public class ScoresCalculator {
 
     public double getNormRatioFactor() {
         List<Double> qPerCategory = getScoringCategories().stream()
-                .map(c -> getPenaltyPerCategory(c.getName())).toList();
+                                                          .map(c -> getPenaltyPerCategory(c.getName()))
+                                                          .toList();
         return qPerCategory.stream()
-                .reduce(1d, (a, b) -> a * b);
+                           .reduce(1d, (a, b) -> a * b);
     }
 }

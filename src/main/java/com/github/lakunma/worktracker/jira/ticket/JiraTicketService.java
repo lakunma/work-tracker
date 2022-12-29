@@ -11,8 +11,12 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -34,7 +38,7 @@ public class JiraTicketService {
         jiraRestClient = new JiraRestClient(authCookie, jiraUrlBase);
     }
 
-    public void resetWorklogCache(){
+    public void resetWorklogCache() {
         dateToWorklog.clear();
     }
 
@@ -97,14 +101,18 @@ public class JiraTicketService {
                 .reduce(0d, Double::sum);
     }
 
-    public double workhoursOnDate(LocalDate date, Set<String> jiraKeys, boolean excludeTickets) {
+    public double workhoursOnDate(LocalDate date, Predicate<String> isJiraKeyGood) {
         List<Worklog> worklogsForDate = getWorklogsForDate(date);
         List<Worklog> filteredWorklogs = worklogsForDate.stream()
-                .filter(worklog -> jiraKeys.contains(worklog.getJiraKey()) ^ excludeTickets)
+                .filter(worklog -> isJiraKeyGood.test(worklog.getJiraKey()))
                 .toList();
 
-
         return worklogsToWorkHours(filteredWorklogs);
+    }
 
+    public List<Worklog> getWorklogsInBetween(Date start, Date end, Predicate<Worklog> worklogInCategory) {
+        return workLogRepository.findAllByStartedBetween(start, end).stream()
+                .filter(worklogInCategory)
+                .toList();
     }
 }
