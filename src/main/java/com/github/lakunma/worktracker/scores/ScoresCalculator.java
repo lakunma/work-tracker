@@ -40,7 +40,9 @@ public class ScoresCalculator {
         this.workingDatesService = workingDatesService;
 
         workingDays = new TreeSet<>(workingDatesService.workingDaysTillNow(workingDaysWindow));
-        norms = StreamSupport.stream(normOnDateRepository.findAll().spliterator(), false).toList();
+        norms = StreamSupport.stream(normOnDateRepository.findAll().spliterator(), false)
+                .sorted(Comparator.comparing(NormOnDate::getDate))
+                .toList();
     }
 
     public List<LocalDate> getDays() {
@@ -174,29 +176,29 @@ public class ScoresCalculator {
                 .reduce(0d, Double::sum);
     }
 
-    public double getRemainingScores() {
-        return getTotalNorm() - getTotalFactoredWeightedCompleted();
+    public double getRemainingNormalizedWorkHours() {
+        double dateWeight = getWeightOnDate(LocalDate.now());
+        return (getTotalNorm() - getTotalFactoredWeightedCompleted()) / dateWeight;
     }
 
-    public double getOneHourScoreForCategory(String categoryName) {
+    public double getNormalizedHoursPerOneHourOfWork(String categoryName) {
         JiraCategory category = jiraCategoryService.getCategory(categoryName);
         double dateWeight = getWeightOnDate(LocalDate.now());
         double factor = getFactorForCategory(categoryName);
         double directScore = dateWeight * factor;
         if (!category.isPrimary()) {
-            return directScore;
+            return directScore / dateWeight;
         }
 
-        Map<String, Double> totalFactoredWeightedCompletedPerCategory = getTotalFactoredWeightedCompletedPerCategory();
         Double nonPrimaryFactoredScore = getTotalFactoredWeightedCompletedPerCategory().entrySet().stream()
                 .filter(kv -> !jiraCategoryService.getCategory(kv.getKey()).isPrimary())
                 .map(Map.Entry::getValue)
                 .reduce(0d, Double::sum);
 
-        double oneHourRatio = 1/getTotalCompleted(categoryName);
+        double oneHourRatio = 1 / getTotalCompleted(categoryName);
         double indirectScore = nonPrimaryFactoredScore * oneHourRatio;
 
-        return directScore + indirectScore;
+        return (directScore + indirectScore) / dateWeight;
 
     }
 

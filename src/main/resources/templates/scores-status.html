@@ -105,7 +105,7 @@
         th:text="${#numbers.formatDecimal(scoresCalculator.getTotalWeightedCompleted(),1,2)}"/></div>
 <div> Completed Factored Weighted Total: <span
         th:text="${#numbers.formatDecimal(scoresCalculator.getTotalFactoredWeightedCompleted(),1,2)}"/></div>
-<div> Remaining scores for today: <span th:text="${#numbers.formatDecimal(scoresCalculator.getRemainingScores(),1,2)}"/>
+<div> Remaining normalized hours for today: <span th:text="${#numbers.formatDecimal(scoresCalculator.getRemainingNormalizedWorkHours(),1,2)}"/>
 </div>
 <div></div>
 
@@ -113,12 +113,12 @@
     <thead>
     <tr style="border-width: 1px; border-style: solid">
         <th></th>
-        <th>OneHourScore</th>
+        <th>NormalizedHoursPerHourOfWork</th>
     </tr>
     <tbody>
     <tr th:each="category: ${scoresCalculator.getCategories()}" style="border-width: 1px; border-style: solid">
         <td th:text="${category.getName()}" style="border-style: solid;border-width: 1px;"></td>
-        <td th:text="${#numbers.formatDecimal(scoresCalculator.getOneHourScoreForCategory(category.getName()),1,3)}"
+        <td th:text="${#numbers.formatDecimal(scoresCalculator.getNormalizedHoursPerOneHourOfWork(category.getName()),1,3)}"
             style="border-style: solid;border-width: 1px;"></td>
     </tr>
     </tbody>
