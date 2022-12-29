@@ -34,6 +34,10 @@ public class JiraTicketService {
         jiraRestClient = new JiraRestClient(authCookie, jiraUrlBase);
     }
 
+    public void resetWorklogCache(){
+        dateToWorklog.clear();
+    }
+
 
     public List<JiraTicket> fetchTicketsFromJira(LocalDate startDate) {
         List<JiraTicketDto> jiraTicketDtos = jiraRestClient.requestTicketsUpdatedAfter(startDate);
@@ -59,18 +63,22 @@ public class JiraTicketService {
         List<JiraTicket> jiraTicketsToUpdate = calcUpdatedJiraTickets(startDate);
 
         List<String> jiraKeysToUpdate = jiraTicketsToUpdate.stream().map(JiraTicket::getJiraKey).toList();
-        updateWorkLogs(jiraKeysToUpdate, startDate);
+        updateWorkLogs(jiraKeysToUpdate);
         jiraTicketRepository.saveAll(jiraTicketsToUpdate);
     }
 
-    private void updateWorkLogs(List<String> jiraKeysToUpdate, LocalDate startDate) {
-        List<Worklog> worklogs = jiraKeysToUpdate.stream().flatMap(jiraKey -> requestWorklogsAfter(jiraKey, startDate).stream()).toList();
+    private void updateWorkLogs(List<String> jiraKeysToUpdate) {
+        List<Worklog> worklogs = jiraKeysToUpdate.stream()
+                .flatMap(jiraKey -> requestWorklogsForJiraTicket(jiraKey).stream())
+                .toList();
 
         workLogRepository.saveAll(worklogs);
+        //TODO: optimize recalculation of cache (we may update only affected dates)
+        resetWorklogCache();
     }
 
-    private List<Worklog> requestWorklogsAfter(String jiraKey, LocalDate startDate) {
-        List<WorklogDto> worklogDtos = jiraRestClient.requestWorklogsAfter(jiraKey, startDate);
+    private List<Worklog> requestWorklogsForJiraTicket(String jiraKey) {
+        List<WorklogDto> worklogDtos = jiraRestClient.requestWorklogsAfter(jiraKey);
         return worklogDtos.stream().map(dto -> JiraConverter.toWorklog(dto, jiraKey)).toList();
     }
 

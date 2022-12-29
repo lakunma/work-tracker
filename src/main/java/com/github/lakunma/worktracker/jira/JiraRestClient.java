@@ -53,7 +53,7 @@ public class JiraRestClient {
         return searchResult.getIssues();
     }
 
-    public List<WorklogDto> requestWorklogsAfter(String jiraKey, LocalDate startDate) {
+    public List<WorklogDto> requestWorklogsAfter(String jiraKey) {
         String restRelPath = MessageFormat.format("/rest/api/2/issue/{0}/worklog", jiraKey);
 
         String url = MessageFormat.format("{0}{1}", jiraUrlBase, restRelPath);
