@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
@@ -40,6 +40,15 @@ public class WorklogController {
                                                             .toInstant());
         Date end = toMeetingTime.apply(LocalDate.now());
         Date start = toMeetingTime.apply(workingDatesService.workingDayBefore(2));
+
+        if (LocalDateTime.now()
+                         .isAfter(LocalDate.now()
+                                           .atTime(14, 30))) {
+            start = toMeetingTime.apply(LocalDate.now());
+            end = toMeetingTime.apply(LocalDate.now()
+                                               .plusDays(1));
+        }
+
 
         Predicate<Worklog> worklogInCategory =
                 (Worklog worklog) -> jiraCategoryService.isJiraKeyInsideCategory(worklog.getJiraKey(), category);
