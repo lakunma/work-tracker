@@ -179,6 +179,9 @@ public class ScoresCalculator {
         return (getTotalNorm() - getTotalFactoredWeightedCompleted()) / dateWeight;
     }
 
+    public double getRemainingWorkhoursForToday(String categoryName){
+        return getRemainingNormalizedWorkHours()/getNormalizedHoursPerOneHourOfWork(categoryName);
+    }
     public double getNormalizedHoursPerOneHourOfWork(String categoryName) {
         JiraCategory category = jiraCategoryService.getCategory(categoryName);
         double dateWeight = getWeightOnDate(LocalDate.now());

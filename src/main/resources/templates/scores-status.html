@@ -114,6 +114,7 @@
     <tr style="border-width: 1px; border-style: solid">
         <th></th>
         <th>NormalizedHoursPerHourOfWork</th>
+        <th>Remaining Hours For Today</th>
         <th>DoneSinceLastDaily</th>
     </tr>
     <tbody>
@@ -121,6 +122,9 @@
         <td th:text="${category.getName()}" style="border-style: solid;border-width: 1px;"></td>
         <td th:text="${#numbers.formatDecimal(scoresCalculator.getNormalizedHoursPerOneHourOfWork(category.getName()),1,3)}"
             style="border-style: solid;border-width: 1px;"></td>
+        <td th:text="${#numbers.formatDecimal(scoresCalculator.getRemainingWorkhoursForToday(category.getName()),1,3)}"
+            style="border-style: solid;border-width: 1px;"></td>
+
         <td> <a class="p-2 text-dark" th:href="@{/worklog/since-last-daily(category=${category.getName()})}">See worklog</a></td>
     </tr>
     </tbody>
