@@ -5,7 +5,9 @@ import com.github.lakunma.worktracker.jira.category.JiraCategoryService;
 import com.github.lakunma.worktracker.jira.ticket.JiraTicketService;
 import com.github.lakunma.worktracker.workingdates.WorkingDatesService;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Predicate;
@@ -179,9 +181,21 @@ public class ScoresCalculator {
         return (getTotalNorm() - getTotalFactoredWeightedCompleted()) / dateWeight;
     }
 
-    public double getRemainingWorkhoursForToday(String categoryName){
-        return getRemainingNormalizedWorkHours()/getNormalizedHoursPerOneHourOfWork(categoryName);
+    public double getRemainingNormalizedUpToNow() {
+        double hoursForToday = getRemainingNormalizedWorkHours();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime endOfWorkDay = LocalDateTime.now()
+                                                  .truncatedTo(ChronoUnit.HOURS)
+                                                  .withHour(17);
+        double dH = Math.max(Duration.between(now, endOfWorkDay)
+                                     .toSeconds() / 3600d, 0);
+        return hoursForToday - dH;
     }
+
+    public double getRemainingWorkhoursForToday(String categoryName) {
+        return getRemainingNormalizedWorkHours() / getNormalizedHoursPerOneHourOfWork(categoryName);
+    }
+
     public double getNormalizedHoursPerOneHourOfWork(String categoryName) {
         JiraCategory category = jiraCategoryService.getCategory(categoryName);
         double dateWeight = getWeightOnDate(LocalDate.now());

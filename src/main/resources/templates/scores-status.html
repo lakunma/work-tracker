@@ -106,6 +106,7 @@
 <div> Completed Factored Weighted Total: <span
         th:text="${#numbers.formatDecimal(scoresCalculator.getTotalFactoredWeightedCompleted(),1,2)}"/></div>
 <div> Remaining normalized hours for today: <span th:text="${#numbers.formatDecimal(scoresCalculator.getRemainingNormalizedWorkHours(),1,2)}"/>
+    <div> Remaining normalized hours for up to now: <span th:text="${#numbers.formatDecimal(scoresCalculator.getRemainingNormalizedUpToNow(),1,2)}"/>
 </div>
 <div></div>
 
